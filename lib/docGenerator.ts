@@ -3,10 +3,10 @@ import {
   Packer,
   Paragraph,
   TextRun,
+  ImageRun,
   Table,
   TableRow,
   TableCell,
-  HeadingLevel,
   AlignmentType,
   BorderStyle,
   WidthType,
@@ -15,7 +15,24 @@ import {
   convertInchesToTwip,
   PageOrientation,
 } from "docx";
+import fs from "fs";
+import path from "path";
+import sharp from "sharp";
 import type { IntakeData, SharingSettings } from "@/types";
+
+// ─── Logo loader (SVG → PNG buffer, cached) ───────────────────────────────────
+let _logoBuf: Buffer | null = null;
+async function getLogoPng(): Promise<Buffer | null> {
+  if (_logoBuf) return _logoBuf;
+  try {
+    const svgPath = path.join(process.cwd(), "public", "logo.svg");
+    const svgBuf = fs.readFileSync(svgPath);
+    _logoBuf = await sharp(svgBuf).resize(320).png().toBuffer();
+    return _logoBuf;
+  } catch {
+    return null;
+  }
+}
 
 // ─── Brand constants ──────────────────────────────────────────────────────────
 const BRAND_BLUE = "1E9FD8";
@@ -117,16 +134,42 @@ function sectionHeading(text: string, color = BRAND_DARK): Paragraph {
   });
 }
 
-function wordmarkParagraph(jobTitle: string): Paragraph {
-  return new Paragraph({
-    children: [
-      new TextRun({ text: "LatentBridge", bold: true, size: 32, color: BRAND_BLUE, font: FONT }),
-      new TextRun({ text: "  |  Workflows to Outcomes", italics: true, size: 20, color: "666666", font: FONT }),
-      new TextRun({ break: 1 }),
-      new TextRun({ text: jobTitle, bold: true, size: 28, color: "222222", font: FONT }),
-    ],
-    spacing: { after: 160 },
-  });
+function logoAndTitleParagraphs(jobTitle: string, logoPng: Buffer | null): Paragraph[] {
+  const paras: Paragraph[] = [];
+
+  if (logoPng) {
+    paras.push(
+      new Paragraph({
+        children: [
+          new ImageRun({
+            data: logoPng,
+            transformation: { width: 160, height: 100 },
+            type: "png",
+          }),
+        ],
+        spacing: { after: 80 },
+      })
+    );
+  } else {
+    paras.push(
+      new Paragraph({
+        children: [
+          new TextRun({ text: "LatentBridge", bold: true, size: 32, color: BRAND_BLUE, font: FONT }),
+          new TextRun({ text: "  |  Workflows to Outcomes", italics: true, size: 20, color: "666666", font: FONT }),
+        ],
+        spacing: { after: 80 },
+      })
+    );
+  }
+
+  paras.push(
+    new Paragraph({
+      children: [new TextRun({ text: jobTitle, bold: true, size: 28, color: "222222", font: FONT })],
+      spacing: { after: 80 },
+    })
+  );
+
+  return paras;
 }
 
 function infoTable(rows: { label: string; value: string }[]): Table {
@@ -294,7 +337,7 @@ function buildCandidateNarrative(
 
 // ─── Document builders ────────────────────────────────────────────────────────
 
-function buildInternalDoc(data: IntakeData): Buffer | Promise<Buffer> {
+async function buildInternalDoc(data: IntakeData, logoPng: Buffer | null): Promise<Buffer> {
   const employmentDetail = buildEmploymentDetail(data);
   const workModeDetail = buildWorkModeDetail(data);
   const expRange = buildExperienceRange(data);
@@ -323,7 +366,7 @@ function buildInternalDoc(data: IntakeData): Buffer | Promise<Buffer> {
   ].filter((r) => r.value);
 
   const children: (Paragraph | Table)[] = [
-    wordmarkParagraph(data.jobTitle || "Untitled Position"),
+    ...logoAndTitleParagraphs(data.jobTitle || "Untitled Position", logoPng),
     bannerParagraph("INTERNAL — TA TEAM USE ONLY (Full Detail)", BRAND_DARK),
     new Paragraph({ children: [], spacing: { after: 120 } }),
     sectionHeading("Requisition Snapshot", BRAND_DARK),
@@ -381,7 +424,7 @@ function buildInternalDoc(data: IntakeData): Buffer | Promise<Buffer> {
   return Packer.toBuffer(doc) as unknown as Promise<Buffer>;
 }
 
-function buildVendorDoc(data: IntakeData, sharing: SharingSettings): Promise<Buffer> {
+async function buildVendorDoc(data: IntakeData, sharing: SharingSettings, logoPng: Buffer | null): Promise<Buffer> {
   const employmentDetail = buildEmploymentDetail(data);
   const workModeDetail = buildWorkModeDetail(data);
   const expRange = buildExperienceRange(data);
@@ -408,7 +451,7 @@ function buildVendorDoc(data: IntakeData, sharing: SharingSettings): Promise<Buf
     .map((r) => ({ label: r.label, value: r.vendorOverride.trim() || r.value }));
 
   const children: (Paragraph | Table)[] = [
-    wordmarkParagraph(data.jobTitle || "Untitled Position"),
+    ...logoAndTitleParagraphs(data.jobTitle || "Untitled Position", logoPng),
     bannerParagraph("VENDOR PARTNER — ROLE BRIEF", BRAND_BLUE),
     new Paragraph({ children: [], spacing: { after: 120 } }),
     sectionHeading("Role Overview", BRAND_BLUE),
@@ -485,7 +528,7 @@ function buildVendorDoc(data: IntakeData, sharing: SharingSettings): Promise<Buf
   return Packer.toBuffer(doc) as unknown as Promise<Buffer>;
 }
 
-function buildCandidateDoc(data: IntakeData, sharing: SharingSettings): Promise<Buffer> {
+async function buildCandidateDoc(data: IntakeData, sharing: SharingSettings, logoPng: Buffer | null): Promise<Buffer> {
   const employmentDetail = buildEmploymentDetail(data);
   const workModeDetail = buildWorkModeDetail(data);
   const expRange = buildExperienceRange(data);
@@ -511,7 +554,7 @@ function buildCandidateDoc(data: IntakeData, sharing: SharingSettings): Promise<
     .map((r) => ({ label: r.label, value: r.override.trim() || r.value }));
 
   const children: (Paragraph | Table)[] = [
-    wordmarkParagraph(data.jobTitle || "Untitled Position"),
+    ...logoAndTitleParagraphs(data.jobTitle || "Untitled Position", logoPng),
     bannerParagraph("JOB OPPORTUNITY", BRAND_GREEN),
     new Paragraph({ children: [], spacing: { after: 120 } }),
     sectionHeading("Role Overview", BRAND_GREEN),
@@ -587,12 +630,18 @@ function buildCandidateDoc(data: IntakeData, sharing: SharingSettings): Promise<
 
 export async function generateDocuments(
   data: IntakeData,
-  sharing: SharingSettings
+  sharing: SharingSettings,
+  docType?: "internal" | "vendor" | "candidate"
 ): Promise<{ internal: Buffer; vendor: Buffer; candidate: Buffer; slug: string }> {
+  const logoPng = await getLogoPng();
+
+  const empty = Buffer.alloc(0);
+  const shouldBuild = (t: "internal" | "vendor" | "candidate") => !docType || docType === t;
+
   const [internal, vendor, candidate] = await Promise.all([
-    buildInternalDoc(data),
-    buildVendorDoc(data, sharing),
-    buildCandidateDoc(data, sharing),
+    shouldBuild("internal") ? buildInternalDoc(data, logoPng) : Promise.resolve(empty),
+    shouldBuild("vendor") ? buildVendorDoc(data, sharing, logoPng) : Promise.resolve(empty),
+    shouldBuild("candidate") ? buildCandidateDoc(data, sharing, logoPng) : Promise.resolve(empty),
   ]);
 
   return {

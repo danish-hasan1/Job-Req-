@@ -57,7 +57,7 @@ export default function IntakeForm({ data, onChange }: Props) {
             <input type="text" placeholder="Your name" value={data.createdBy} onChange={set("createdBy")} />
           </Field>
           <Field>
-            <Label>Requested By (Hiring Manager)</Label>
+            <Label>Requested By</Label>
             <input type="text" placeholder="Stakeholder name" value={data.requestedBy} onChange={set("requestedBy")} />
           </Field>
           <Field>
@@ -249,16 +249,53 @@ export default function IntakeForm({ data, onChange }: Props) {
       {/* Section 5 */}
       <div className="form-section">
         <SectionTitle num={5} title="Interview Process" />
-        <Grid>
-          <Field>
-            <Label>Number of Interview Rounds</Label>
-            <input type="number" min={1} value={data.numberOfInterviewRounds || ""} onChange={set("numberOfInterviewRounds")} placeholder="e.g. 3" />
-          </Field>
-          <Field>
-            <Label>Interview Panel</Label>
-            <input type="text" placeholder="Names, comma-separated" value={data.interviewPanel} onChange={set("interviewPanel")} />
-          </Field>
-        </Grid>
+        <Field className="mb-5">
+          <Label>Number of Interview Rounds</Label>
+          <input
+            type="number"
+            min={1}
+            max={10}
+            value={data.numberOfInterviewRounds || ""}
+            onChange={set("numberOfInterviewRounds")}
+            placeholder="e.g. 3"
+            className="max-w-[160px]"
+          />
+        </Field>
+
+        {(data.numberOfInterviewRounds || 0) > 0 && (
+          <div>
+            <p className="field-label mb-3">Interviewer per Round</p>
+            <div className="grid grid-cols-1 md:grid-cols-2 gap-3">
+              {Array.from({ length: data.numberOfInterviewRounds }, (_, i) => {
+                const rounds = data.interviewPanel
+                  .split(",")
+                  .map((s) => s.trim());
+                const val = rounds[i] ?? "";
+                const label = `L${i + 1}`;
+                return (
+                  <div key={i} className="flex items-center gap-2">
+                    <span className="flex-shrink-0 w-10 h-9 rounded-lg bg-brand-light text-brand-dark text-xs font-bold flex items-center justify-center border border-brand-blue/20">
+                      {label}
+                    </span>
+                    <input
+                      type="text"
+                      placeholder={`Interviewer name (${label})`}
+                      value={val}
+                      onChange={(e) => {
+                        const arr = data.interviewPanel
+                          .split(",")
+                          .map((s) => s.trim());
+                        while (arr.length <= i) arr.push("");
+                        arr[i] = e.target.value;
+                        onChange({ interviewPanel: arr.join(", ") });
+                      }}
+                    />
+                  </div>
+                );
+              })}
+            </div>
+          </div>
+        )}
       </div>
 
       {/* Section 6 */}

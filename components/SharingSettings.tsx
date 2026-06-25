@@ -74,7 +74,7 @@ export default function SharingSettingsPanel({ settings, onChange }: Props) {
           </p>
 
           {/* Header row */}
-          <div className="grid grid-cols-[200px_1fr_1fr] gap-2 mb-2 text-xs font-semibold text-gray-500 uppercase tracking-wide px-3">
+          <div className="grid grid-cols-[220px_1fr_1fr] gap-2 mb-2 text-xs font-semibold text-gray-500 uppercase tracking-wide px-3">
             <span>Field</span>
             <span className="flex items-center gap-2">
               <span className="w-3 h-3 rounded-full inline-block" style={{ background: "#1E9FD8" }} />
@@ -91,7 +91,7 @@ export default function SharingSettingsPanel({ settings, onChange }: Props) {
               const cfg = settings[key];
               const label = SHARING_FIELD_LABELS[key];
               return (
-                <div key={key} className="grid grid-cols-[200px_1fr_1fr] gap-2 items-start p-3 hover:bg-gray-50 transition-colors">
+                <div key={key} className="grid grid-cols-[220px_1fr_1fr] gap-2 items-start p-3 hover:bg-gray-50 transition-colors">
                   <span className="text-sm font-medium text-gray-700 pt-1">{label}</span>
 
                   {/* Vendor column */}

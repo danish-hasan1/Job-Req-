@@ -1,0 +1,26 @@
+<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 500 320" fill="none">
+  <!-- Bridge/smile-curve bar chart icon -->
+  <!-- 5 bars, tops follow a concave arc (bridge shape), all in brand blue #1E9FD8 -->
+  <!-- Bar widths ~60px, gaps ~15px, heights form the arch -->
+
+  <!-- Shared top arc curve as a clip/guide -->
+  <!-- Bar 1 (leftmost, tallest) -->
+  <rect x="20" y="10" width="62" height="185" rx="4" fill="#1E9FD8"/>
+  <!-- Bar 2 -->
+  <rect x="102" y="52" width="62" height="143" rx="4" fill="#1E9FD8"/>
+  <!-- Bar 3 (center, shortest) -->
+  <rect x="184" y="82" width="62" height="113" rx="4" fill="#1E9FD8"/>
+  <!-- Bar 4 -->
+  <rect x="266" y="52" width="62" height="143" rx="4" fill="#1E9FD8"/>
+  <!-- Bar 5 (rightmost, tallest) -->
+  <rect x="348" y="10" width="62" height="185" rx="4" fill="#1E9FD8"/>
+
+  <!-- Curved top cap connecting all bar tops — concave bridge arc -->
+  <path d="M20,10 Q51,-18 102,52 Q153,82 184,82 Q215,82 266,52 Q318,-18 410,10 L410,10 Q380,-30 330,42 Q295,72 250,72 Q205,72 170,42 Q120,-30 20,10 Z" fill="#1E9FD8"/>
+
+  <!-- "LatentBridge" wordmark -->
+  <text x="20" y="250" font-family="Arial, Helvetica, sans-serif" font-size="72" font-weight="700" fill="#1E9FD8" letter-spacing="-1">LatentBridge</text>
+
+  <!-- "Workflows to Outcomes" tagline -->
+  <text x="22" y="300" font-family="Arial, Helvetica, sans-serif" font-size="30" font-weight="400" fill="#1E9FD8" letter-spacing="3">Workflows to Outcomes</text>
+</svg>
