@@ -1,0 +1,43 @@
+@tailwind base;
+@tailwind components;
+@tailwind utilities;
+
+:root {
+  --brand-blue: #1E9FD8;
+  --brand-dark: #0E76A8;
+  --brand-light: #DDEEF7;
+  --brand-green: #2E9E5B;
+}
+
+body {
+  @apply bg-gray-50 text-gray-900;
+}
+
+.form-section {
+  @apply bg-white rounded-xl shadow-sm border border-gray-200 p-6 mb-6;
+}
+
+.section-title {
+  @apply text-lg font-semibold text-brand-dark mb-4 pb-2 border-b border-brand-light;
+}
+
+.field-label {
+  @apply block text-sm font-medium text-gray-700 mb-1;
+}
+
+.field-hint {
+  @apply text-xs text-gray-500 mt-1;
+}
+
+input[type="text"],
+input[type="number"],
+input[type="date"],
+select,
+textarea {
+  @apply block w-full rounded-lg border-gray-300 shadow-sm text-sm
+    focus:border-brand-blue focus:ring-brand-blue;
+}
+
+textarea {
+  @apply resize-y min-h-[80px];
+}
