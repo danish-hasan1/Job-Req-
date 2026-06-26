@@ -19,7 +19,12 @@ export interface IntakeData {
   extensionDurationMonths: number;
   experienceMin: number;
   experienceMax: number;
-  budget: string;
+  // Structured budget (replaces freetext budget)
+  currency: string;       // "INR", "USD", etc.
+  budgetMin: number;
+  budgetMax: number;
+  budgetUnit: string;     // "LPA", "per month", "per hour", "per annum"
+  budget: string;         // kept for backward compat / freetext fallback
   noticePeriod: "Immediate" | "15 Days" | "30 Days" | "45 Days" | "60 Days" | "90 Days";
   possibleStartDate: string;
   priority: "P0 - Critical" | "P1 - High" | "P2 - Medium" | "P3 - Low";
@@ -30,6 +35,7 @@ export interface IntakeData {
   daysInOffice: number;
 
   // Section 4 - Role Requirements
+  aboutRole: string;       // About the Role / Company overview
   mandatorySkills: string;
   goodToHaveSkills: string;
   keyResponsibilities: string;
@@ -100,27 +106,29 @@ export const SHARING_FIELD_LABELS: Record<SharingField, string> = {
   additionalNotes: "Additional Notes",
 };
 
+// Updated defaults: vendor & candidate have restricted defaults as per policy
 export const DEFAULT_SHARING_SETTINGS: SharingSettings = {
-  jobTitle: { vendorInclude: true, vendorOverride: "", candidateInclude: true, candidateOverride: "" },
-  department: { vendorInclude: true, vendorOverride: "", candidateInclude: true, candidateOverride: "" },
-  clientName: { vendorInclude: true, vendorOverride: "", candidateInclude: false, candidateOverride: "" },
-  location: { vendorInclude: true, vendorOverride: "", candidateInclude: true, candidateOverride: "" },
-  workMode: { vendorInclude: true, vendorOverride: "", candidateInclude: true, candidateOverride: "" },
-  employmentTypeAndDuration: { vendorInclude: true, vendorOverride: "", candidateInclude: true, candidateOverride: "" },
-  experienceRange: { vendorInclude: true, vendorOverride: "", candidateInclude: true, candidateOverride: "" },
-  budget: { vendorInclude: true, vendorOverride: "", candidateInclude: false, candidateOverride: "" },
-  reportingManager: { vendorInclude: true, vendorOverride: "", candidateInclude: false, candidateOverride: "" },
-  numberOfOpenings: { vendorInclude: true, vendorOverride: "", candidateInclude: true, candidateOverride: "" },
-  keyResponsibilities: { vendorInclude: true, vendorOverride: "", candidateInclude: true, candidateOverride: "" },
-  mandatorySkills: { vendorInclude: true, vendorOverride: "", candidateInclude: true, candidateOverride: "" },
-  goodToHaveSkills: { vendorInclude: true, vendorOverride: "", candidateInclude: true, candidateOverride: "" },
-  educationQualification: { vendorInclude: true, vendorOverride: "", candidateInclude: true, candidateOverride: "" },
-  certifications: { vendorInclude: true, vendorOverride: "", candidateInclude: true, candidateOverride: "" },
-  numberOfInterviewRounds: { vendorInclude: true, vendorOverride: "", candidateInclude: true, candidateOverride: "" },
-  interviewPanelNames: { vendorInclude: false, vendorOverride: "", candidateInclude: false, candidateOverride: "" },
-  noticePeriod: { vendorInclude: true, vendorOverride: "", candidateInclude: true, candidateOverride: "" },
-  possibleStartDate: { vendorInclude: true, vendorOverride: "", candidateInclude: true, candidateOverride: "" },
-  additionalNotes: { vendorInclude: true, vendorOverride: "", candidateInclude: false, candidateOverride: "" },
+  jobTitle:                 { vendorInclude: true,  vendorOverride: "", candidateInclude: true,  candidateOverride: "" },
+  department:               { vendorInclude: true,  vendorOverride: "", candidateInclude: true,  candidateOverride: "" },
+  clientName:               { vendorInclude: false, vendorOverride: "", candidateInclude: false, candidateOverride: "" },
+  location:                 { vendorInclude: true,  vendorOverride: "", candidateInclude: true,  candidateOverride: "" },
+  workMode:                 { vendorInclude: true,  vendorOverride: "", candidateInclude: true,  candidateOverride: "" },
+  employmentTypeAndDuration:{ vendorInclude: true,  vendorOverride: "", candidateInclude: true,  candidateOverride: "" },
+  experienceRange:          { vendorInclude: true,  vendorOverride: "", candidateInclude: true,  candidateOverride: "" },
+  // budget: included for both; auto-reduced 15% (vendor) / 20% (candidate) unless overridden
+  budget:                   { vendorInclude: true,  vendorOverride: "", candidateInclude: true,  candidateOverride: "" },
+  reportingManager:         { vendorInclude: false, vendorOverride: "", candidateInclude: false, candidateOverride: "" },
+  numberOfOpenings:         { vendorInclude: true,  vendorOverride: "", candidateInclude: true,  candidateOverride: "" },
+  keyResponsibilities:      { vendorInclude: true,  vendorOverride: "", candidateInclude: true,  candidateOverride: "" },
+  mandatorySkills:          { vendorInclude: true,  vendorOverride: "", candidateInclude: true,  candidateOverride: "" },
+  goodToHaveSkills:         { vendorInclude: true,  vendorOverride: "", candidateInclude: true,  candidateOverride: "" },
+  educationQualification:   { vendorInclude: true,  vendorOverride: "", candidateInclude: true,  candidateOverride: "" },
+  certifications:           { vendorInclude: true,  vendorOverride: "", candidateInclude: true,  candidateOverride: "" },
+  numberOfInterviewRounds:  { vendorInclude: true,  vendorOverride: "", candidateInclude: true,  candidateOverride: "" },
+  interviewPanelNames:      { vendorInclude: false, vendorOverride: "", candidateInclude: false, candidateOverride: "" },
+  noticePeriod:             { vendorInclude: true,  vendorOverride: "", candidateInclude: true,  candidateOverride: "" },
+  possibleStartDate:        { vendorInclude: true,  vendorOverride: "", candidateInclude: true,  candidateOverride: "" },
+  additionalNotes:          { vendorInclude: false, vendorOverride: "", candidateInclude: false, candidateOverride: "" },
 };
 
 export const SHARING_FIELDS_ORDER: SharingField[] = [
@@ -145,3 +153,17 @@ export const SHARING_FIELDS_ORDER: SharingField[] = [
   "possibleStartDate",
   "additionalNotes",
 ];
+
+export const CURRENCIES = ["INR", "USD", "GBP", "EUR", "AED", "SGD", "CAD", "AUD", "JPY", "MYR"];
+export const BUDGET_UNITS = ["LPA", "per month", "per hour", "per annum", "fixed"];
+
+// Saved requisition record stored in localStorage
+export interface SavedReq {
+  id: string;
+  savedAt: string;
+  jobTitle: string;
+  clientName: string;
+  requisitionType: string;
+  intakeData: IntakeData;
+  sharingSettings: SharingSettings;
+}

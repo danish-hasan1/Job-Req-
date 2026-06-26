@@ -4,6 +4,7 @@ import "./globals.css";
 export const metadata: Metadata = {
   title: "LatentBridge — Job Requisition Tool",
   description: "Generate professional job requisition documents for Internal, Vendor, and Candidate audiences.",
+  icons: { icon: "/favicon.svg", shortcut: "/favicon.svg" },
 };
 
 export default function RootLayout({ children }: { children: React.ReactNode }) {

@@ -76,6 +76,28 @@ function buildExperienceRange(data: IntakeData): string {
   return "—";
 }
 
+// Build a formatted budget string, optionally applying a % reduction to numeric min/max
+function buildBudgetDisplay(data: IntakeData, reductionPct = 0): string {
+  const factor = 1 - reductionPct / 100;
+  const curr = data.currency || "INR";
+  const unit = data.budgetUnit || "";
+
+  if (data.budgetMin || data.budgetMax) {
+    const fmt = (n: number) => {
+      const reduced = Math.round(n * factor);
+      // Format with commas for large numbers
+      return reduced.toLocaleString("en-IN");
+    };
+    if (data.budgetMin && data.budgetMax) {
+      return `${curr} ${fmt(data.budgetMin)}–${fmt(data.budgetMax)} ${unit}`.trim();
+    }
+    if (data.budgetMin) return `${curr} ${fmt(data.budgetMin)}+ ${unit}`.trim();
+    return `${curr} up to ${fmt(data.budgetMax)} ${unit}`.trim();
+  }
+  // Fallback to freetext budget field (no reduction applied)
+  return data.budget || "";
+}
+
 function slugify(text: string): string {
   return text
     .toLowerCase()
@@ -354,7 +376,7 @@ async function buildInternalDoc(data: IntakeData, logoPng: Buffer | null): Promi
     { label: "No. of Openings", value: String(data.numberOfResources || 1) },
     { label: "Employment Type", value: employmentDetail },
     { label: "Experience", value: expRange },
-    { label: "Budget / CTC / Rate", value: data.budget },
+    { label: "Budget / CTC / Rate", value: buildBudgetDisplay(data) },
     { label: "Notice Period", value: data.noticePeriod },
     { label: "Start Date", value: data.possibleStartDate },
     { label: "Priority", value: data.priority },
@@ -375,6 +397,7 @@ async function buildInternalDoc(data: IntakeData, logoPng: Buffer | null): Promi
     new Paragraph({ children: [], spacing: { after: 160 } }),
     sectionHeading("About the Role", BRAND_DARK),
     bodyParagraph(buildInternalNarrative(data, employmentDetail, workModeDetail)),
+    ...(data.aboutRole ? [bodyParagraph(data.aboutRole)] : []),
   ];
 
   const responsibilities = splitLines(data.keyResponsibilities);
@@ -437,7 +460,8 @@ async function buildVendorDoc(data: IntakeData, sharing: SharingSettings, logoPn
     { key: "workMode", label: "Work Mode", value: workModeDetail, vendorInclude: sharing.workMode.vendorInclude, vendorOverride: sharing.workMode.vendorOverride },
     { key: "employmentTypeAndDuration", label: "Employment Type", value: employmentDetail, vendorInclude: sharing.employmentTypeAndDuration.vendorInclude, vendorOverride: sharing.employmentTypeAndDuration.vendorOverride },
     { key: "experienceRange", label: "Experience", value: expRange, vendorInclude: sharing.experienceRange.vendorInclude, vendorOverride: sharing.experienceRange.vendorOverride },
-    { key: "budget", label: "Budget / CTC / Rate", value: data.budget, vendorInclude: sharing.budget.vendorInclude, vendorOverride: sharing.budget.vendorOverride },
+    // Budget: auto-apply 15% reduction for vendor unless manual override provided
+    { key: "budget", label: "Budget / CTC / Rate", value: buildBudgetDisplay(data, 15), vendorInclude: sharing.budget.vendorInclude, vendorOverride: sharing.budget.vendorOverride },
     { key: "reportingManager", label: "Reporting Manager", value: data.reportingManager, vendorInclude: sharing.reportingManager.vendorInclude, vendorOverride: sharing.reportingManager.vendorOverride },
     { key: "numberOfOpenings", label: "No. of Openings", value: String(data.numberOfResources || 1), vendorInclude: sharing.numberOfOpenings.vendorInclude, vendorOverride: sharing.numberOfOpenings.vendorOverride },
     { key: "numberOfInterviewRounds", label: "Interview Rounds", value: String(data.numberOfInterviewRounds || ""), vendorInclude: sharing.numberOfInterviewRounds.vendorInclude, vendorOverride: sharing.numberOfInterviewRounds.vendorOverride },
@@ -460,6 +484,7 @@ async function buildVendorDoc(data: IntakeData, sharing: SharingSettings, logoPn
     new Paragraph({ children: [], spacing: { after: 160 } }),
     sectionHeading("About the Role", BRAND_BLUE),
     bodyParagraph(buildVendorNarrative(data, employmentDetail, workModeDetail, sharing)),
+    ...(data.aboutRole ? [bodyParagraph(data.aboutRole)] : []),
   ];
 
   if (sharing.keyResponsibilities.vendorInclude) {
@@ -541,7 +566,8 @@ async function buildCandidateDoc(data: IntakeData, sharing: SharingSettings, log
     { label: "Work Mode", value: workModeDetail, include: sharing.workMode.candidateInclude, override: sharing.workMode.candidateOverride },
     { label: "Employment Type", value: employmentDetail, include: sharing.employmentTypeAndDuration.candidateInclude, override: sharing.employmentTypeAndDuration.candidateOverride },
     { label: "Experience Required", value: expRange, include: sharing.experienceRange.candidateInclude, override: sharing.experienceRange.candidateOverride },
-    { label: "Compensation", value: data.budget, include: sharing.budget.candidateInclude, override: sharing.budget.candidateOverride },
+    // Budget: auto-apply 20% reduction for candidate unless manual override provided
+    { label: "Compensation", value: buildBudgetDisplay(data, 20), include: sharing.budget.candidateInclude, override: sharing.budget.candidateOverride },
     { label: "Reporting To", value: data.reportingManager, include: sharing.reportingManager.candidateInclude, override: sharing.reportingManager.candidateOverride },
     { label: "No. of Openings", value: String(data.numberOfResources || 1), include: sharing.numberOfOpenings.candidateInclude, override: sharing.numberOfOpenings.candidateOverride },
     { label: "Interview Rounds", value: String(data.numberOfInterviewRounds || ""), include: sharing.numberOfInterviewRounds.candidateInclude, override: sharing.numberOfInterviewRounds.candidateOverride },
@@ -563,6 +589,7 @@ async function buildCandidateDoc(data: IntakeData, sharing: SharingSettings, log
     new Paragraph({ children: [], spacing: { after: 160 } }),
     sectionHeading("About the Role", BRAND_GREEN),
     bodyParagraph(buildCandidateNarrative(data, employmentDetail, workModeDetail, sharing)),
+    ...(data.aboutRole ? [bodyParagraph(data.aboutRole)] : []),
   ];
 
   if (sharing.keyResponsibilities.candidateInclude) {

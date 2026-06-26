@@ -1,6 +1,7 @@
 "use client";
 import React from "react";
 import type { IntakeData } from "@/types";
+import { CURRENCIES, BUDGET_UNITS } from "@/types";
 
 interface Props {
   data: IntakeData;
@@ -24,7 +25,7 @@ function Grid({ children }: { children: React.ReactNode }) {
   return <div className="grid grid-cols-1 md:grid-cols-2 gap-4">{children}</div>;
 }
 
-function SectionTitle({ num, title }: { num: number; title: string }) {
+function SectionTitle({ num, title }: { num: number | string; title: string }) {
   return (
     <div className="flex items-center gap-3 mb-5 pb-2 border-b border-brand-light">
       <span className="flex-shrink-0 w-7 h-7 rounded-full bg-brand-blue text-white text-sm font-bold flex items-center justify-center">
@@ -53,7 +54,7 @@ export default function IntakeForm({ data, onChange }: Props) {
             <input type="date" value={data.requisitionDate} onChange={set("requisitionDate")} />
           </Field>
           <Field>
-            <Label>Created By (TA/Recruiter)</Label>
+            <Label>Created By</Label>
             <input type="text" placeholder="Your name" value={data.createdBy} onChange={set("createdBy")} />
           </Field>
           <Field>
@@ -145,11 +146,57 @@ export default function IntakeForm({ data, onChange }: Props) {
             <Label>Experience Range — Maximum (Yrs)</Label>
             <input type="number" min={0} value={data.experienceMax || ""} onChange={set("experienceMax")} placeholder="e.g. 8" />
           </Field>
-          <Field>
-            <Label>Budget / CTC / Rate</Label>
-            <input type="text" placeholder="e.g. INR 18–22 LPA or $60–70/hr" value={data.budget} onChange={set("budget")} />
-          </Field>
-          <Field>
+        </Grid>
+
+        {/* Budget — structured fields */}
+        <div className="mt-2">
+          <Label>Budget / CTC / Rate</Label>
+          <p className="text-xs text-gray-500 mb-2">
+            Vendor copy will show rates at −15% · Candidate copy at −20% (auto-calculated unless you enter a manual override in Sharing Settings)
+          </p>
+          <div className="grid grid-cols-[110px_1fr_1fr_140px] gap-2 items-end">
+            <div>
+              <label className="text-xs font-medium text-gray-500 block mb-1">Currency</label>
+              <select value={data.currency || "INR"} onChange={set("currency")} className="text-sm">
+                {CURRENCIES.map((c) => (
+                  <option key={c} value={c}>{c}</option>
+                ))}
+              </select>
+            </div>
+            <div>
+              <label className="text-xs font-medium text-gray-500 block mb-1">Min Amount</label>
+              <input type="number" min={0} placeholder="e.g. 18" value={data.budgetMin || ""} onChange={set("budgetMin")} className="text-sm" />
+            </div>
+            <div>
+              <label className="text-xs font-medium text-gray-500 block mb-1">Max Amount</label>
+              <input type="number" min={0} placeholder="e.g. 22" value={data.budgetMax || ""} onChange={set("budgetMax")} className="text-sm" />
+            </div>
+            <div>
+              <label className="text-xs font-medium text-gray-500 block mb-1">Unit</label>
+              <select value={data.budgetUnit || "LPA"} onChange={set("budgetUnit")} className="text-sm">
+                {BUDGET_UNITS.map((u) => (
+                  <option key={u} value={u}>{u}</option>
+                ))}
+              </select>
+            </div>
+          </div>
+          {(data.budgetMin || data.budgetMax) && (
+            <p className="text-xs text-brand-blue mt-1.5 font-medium">
+              {data.currency || "INR"} {data.budgetMin || ""}
+              {data.budgetMin && data.budgetMax ? `–${data.budgetMax}` : data.budgetMax || ""}
+              {" "}{data.budgetUnit || "LPA"}
+              {" · Vendor: "}{data.currency || "INR"} {data.budgetMin ? Math.round(data.budgetMin * 0.85) : ""}
+              {data.budgetMin && data.budgetMax ? `–${Math.round(data.budgetMax * 0.85)}` : data.budgetMax ? Math.round(data.budgetMax * 0.85) : ""}
+              {" "}{data.budgetUnit || "LPA"}
+              {" · Candidate: "}{data.currency || "INR"} {data.budgetMin ? Math.round(data.budgetMin * 0.80) : ""}
+              {data.budgetMin && data.budgetMax ? `–${Math.round(data.budgetMax * 0.80)}` : data.budgetMax ? Math.round(data.budgetMax * 0.80) : ""}
+              {" "}{data.budgetUnit || "LPA"}
+            </p>
+          )}
+        </div>
+
+        <Grid>
+          <Field className="mb-4 mt-4">
             <Label>Expected Notice Period</Label>
             <select value={data.noticePeriod} onChange={set("noticePeriod")}>
               <option value="Immediate">Immediate</option>
@@ -160,7 +207,7 @@ export default function IntakeForm({ data, onChange }: Props) {
               <option value="90 Days">90 Days</option>
             </select>
           </Field>
-          <Field>
+          <Field className="mb-4 mt-4">
             <Label>Possible Start Date</Label>
             <input type="date" value={data.possibleStartDate} onChange={set("possibleStartDate")} />
           </Field>
@@ -205,24 +252,14 @@ export default function IntakeForm({ data, onChange }: Props) {
       <div className="form-section">
         <SectionTitle num={4} title="Role Requirements" />
         <Field className="mb-4">
-          <Label required>Mandatory Skills</Label>
-          <textarea
-            rows={5}
-            placeholder={"One skill per line:\nPython\nSQL\nAWS"}
-            value={data.mandatorySkills}
-            onChange={set("mandatorySkills")}
-          />
-          <p className="field-hint">One skill per line — each becomes a bullet point in the document</p>
-        </Field>
-        <Field className="mb-4">
-          <Label>Good-to-Have Skills</Label>
+          <Label>About the Role</Label>
           <textarea
             rows={4}
-            placeholder={"One skill per line:\nKubernetes\nSpark"}
-            value={data.goodToHaveSkills}
-            onChange={set("goodToHaveSkills")}
+            placeholder="Brief description of the company, team, and the opportunity. This paragraph appears in all three documents..."
+            value={data.aboutRole || ""}
+            onChange={set("aboutRole")}
           />
-          <p className="field-hint">Optional — one per line</p>
+          <p className="field-hint">Appears in Internal, Vendor, and Candidate documents as a company/role overview</p>
         </Field>
         <Field className="mb-4">
           <Label required>Key Responsibilities</Label>
@@ -232,7 +269,27 @@ export default function IntakeForm({ data, onChange }: Props) {
             value={data.keyResponsibilities}
             onChange={set("keyResponsibilities")}
           />
-          <p className="field-hint">One responsibility per line</p>
+          <p className="field-hint">One responsibility per line — each becomes a bullet point</p>
+        </Field>
+        <Field className="mb-4">
+          <Label required>Mandatory Skills</Label>
+          <textarea
+            rows={5}
+            placeholder={"One skill per line:\nPython\nSQL\nAWS"}
+            value={data.mandatorySkills}
+            onChange={set("mandatorySkills")}
+          />
+          <p className="field-hint">One skill per line</p>
+        </Field>
+        <Field className="mb-4">
+          <Label>Good-to-Have Skills</Label>
+          <textarea
+            rows={3}
+            placeholder={"One skill per line:\nKubernetes\nSpark"}
+            value={data.goodToHaveSkills}
+            onChange={set("goodToHaveSkills")}
+          />
+          <p className="field-hint">Optional — one per line</p>
         </Field>
         <Grid>
           <Field>
@@ -267,24 +324,19 @@ export default function IntakeForm({ data, onChange }: Props) {
             <p className="field-label mb-3">Interviewer per Round</p>
             <div className="grid grid-cols-1 md:grid-cols-2 gap-3">
               {Array.from({ length: data.numberOfInterviewRounds }, (_, i) => {
-                const rounds = data.interviewPanel
-                  .split(",")
-                  .map((s) => s.trim());
+                const rounds = data.interviewPanel.split(",").map((s) => s.trim());
                 const val = rounds[i] ?? "";
-                const label = `L${i + 1}`;
                 return (
                   <div key={i} className="flex items-center gap-2">
                     <span className="flex-shrink-0 w-10 h-9 rounded-lg bg-brand-light text-brand-dark text-xs font-bold flex items-center justify-center border border-brand-blue/20">
-                      {label}
+                      L{i + 1}
                     </span>
                     <input
                       type="text"
-                      placeholder={`Interviewer name (${label})`}
+                      placeholder={`Interviewer name (L${i + 1})`}
                       value={val}
                       onChange={(e) => {
-                        const arr = data.interviewPanel
-                          .split(",")
-                          .map((s) => s.trim());
+                        const arr = data.interviewPanel.split(",").map((s) => s.trim());
                         while (arr.length <= i) arr.push("");
                         arr[i] = e.target.value;
                         onChange({ interviewPanel: arr.join(", ") });
@@ -294,6 +346,7 @@ export default function IntakeForm({ data, onChange }: Props) {
                 );
               })}
             </div>
+            <p className="field-hint mt-2">Interviewer names are hidden from Vendor and Candidate documents by default</p>
           </div>
         )}
       </div>
@@ -305,10 +358,11 @@ export default function IntakeForm({ data, onChange }: Props) {
           <Label>Additional Notes / Special Instructions</Label>
           <textarea
             rows={4}
-            placeholder="Any special instructions, background context, or notes for the TA team..."
+            placeholder="Any special instructions, background context, or notes for the TA team (internal only by default)..."
             value={data.additionalNotes}
             onChange={set("additionalNotes")}
           />
+          <p className="field-hint">Hidden from Vendor and Candidate documents by default</p>
         </Field>
       </div>
     </div>
