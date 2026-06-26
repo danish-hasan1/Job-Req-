@@ -155,7 +155,7 @@ export const SHARING_FIELDS_ORDER: SharingField[] = [
 ];
 
 export const CURRENCIES = ["INR", "USD", "GBP", "EUR", "AED", "SGD", "CAD", "AUD", "JPY", "MYR"];
-export const BUDGET_UNITS = ["LPA", "per month", "per hour", "per annum", "fixed"];
+export const BUDGET_UNITS = ["LPA", "per month", "per day", "per hour", "per annum", "fixed"];
 
 // Saved requisition record stored in localStorage
 export interface SavedReq {
